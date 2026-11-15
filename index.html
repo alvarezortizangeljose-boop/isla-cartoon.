@@ -1,0 +1,173 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Isla Cartoon</title>
+<style>
+body {
+  margin:0;
+  background:#182b36;
+  color:white;
+  font-family:Arial;
+  text-align:center;
+}
+h1 {color:#ffd43b}
+canvas {
+  width:95%;
+  max-width:500px;
+  background:#64bd68;
+  border:4px solid white;
+  border-radius:15px;
+  touch-action:none;
+}
+button {
+  padding:16px;
+  margin:5px;
+  border:0;
+  border-radius:12px;
+  background:#ffc928;
+  font-weight:bold;
+}
+</style>
+</head>
+<body>
+<h1>🏝️ ISLA CARTOON</h1>
+<p id="info">Nivel: Bronce | Vida: 100</p>
+<canvas id="game" width="400" height="500"></canvas>
+<div>
+<button id="left">⬅️</button>
+<button id="up">⬆️</button>
+<button id="down">⬇️</button>
+<button id="right">➡️</button>
+<button id="shoot">🔫 DISPARAR</button>
+</div>
+<script>
+const c=document.getElementById("game");
+const ctx=c.getContext("2d");
+let player={x:200,y:250,life:100};
+let enemies=[
+{x:70,y:80},
+{x:320,y:120},
+{x:300,y:400}
+];
+let score=0;
+let bullets=[];
+let keys={};
+
+function move(key,dir){
+  key.addEventListener("pointerdown",e=>{
+    e.preventDefault(); keys[dir]=true;
+  });
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>{
+    key.addEventListener(ev,()=>keys[dir]=false);
+  });
+}
+move(document.getElementById("left"),"left");
+move(document.getElementById("right"),"right");
+move(document.getElementById("up"),"up");
+move(document.getElementById("down"),"down");
+
+document.getElementById("shoot").onclick=()=>{
+ if(enemies.length){
+  let e=enemies[0];
+  bullets.push({x:player.x,y:player.y,
+    vx:(e.x-player.x)/20,
+    vy:(e.y-player.y)/20});
+ }
+};
+
+function draw(){
+ ctx.clearRect(0,0,400,500);
+
+ // Isla
+ ctx.fillStyle="#64bd68";
+ ctx.fillRect(0,0,400,500);
+ ctx.fillStyle="#e7d18a";
+ ctx.fillRect(0,0,400,500);
+ ctx.fillStyle="#65bd67";
+ ctx.fillRect(15,15,370,470);
+
+ // Árboles
+ for(let i=0;i<9;i++){
+  let x=(i*83+30)%380+10;
+  let y=(i*113+20)%470+15;
+  ctx.fillStyle="#70452a";
+  ctx.fillRect(x,y+12,8,18);
+  ctx.fillStyle="#167d37";
+  ctx.beginPath();
+  ctx.arc(x+4,y,16,0,Math.PI*2);
+  ctx.fill();
+ }
+
+ // Enemigos
+ enemies.forEach(e=>{
+  ctx.fillStyle="#e94b4b";
+  ctx.beginPath();
+  ctx.arc(e.x,e.y,13,0,Math.PI*2);
+  ctx.fill();
+ });
+
+ // Jugador
+ ctx.fillStyle="#2776e8";
+ ctx.beginPath();
+ ctx.arc(player.x,player.y,15,0,Math.PI*2);
+ ctx.fill();
+ ctx.fillStyle="white";
+ ctx.fillRect(player.x-5,player.y-3,10,5);
+
+ // Balas
+ ctx.fillStyle="#fff000";
+ bullets.forEach(b=>{
+  ctx.beginPath();
+  ctx.arc(b.x,b.y,5,0,Math.PI*2);
+  ctx.fill();
+ });
+
+ ctx.fillStyle="white";
+ ctx.font="16px Arial";
+ ctx.fillText("⭐ Puntos: "+score,15,25);
+
+ if(player.life<=0){
+  ctx.fillStyle="black";
+  ctx.font="30px Arial";
+  ctx.fillText("FIN DEL JUEGO",90,250);
+ }
+}
+
+function update(){
+ if(keys.left)player.x-=3;
+ if(keys.right)player.x+=3;
+ if(keys.up)player.y-=3;
+ if(keys.down)player.y+=3;
+
+ player.x=Math.max(20,Math.min(380,player.x));
+ player.y=Math.max(35,Math.min(480,player.y));
+
+ bullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy});
+
+ bullets=bullets.filter(b=>{
+  let hit=false;
+  enemies=enemies.filter(e=>{
+   if(Math.hypot(e.x-b.x,e.y-b.y)<19){
+    score+=10;hit=true;return false;
+   }
+   return true;
+  });
+  return !hit && b.x>0 && b.x<400 && b.y>0 && b.y<500;
+ });
+
+ document.getElementById("info").textContent=
+ "Nivel: "+(score>=100?"Plata":"Bronce")+" | Vida: "+player.life;
+
+ if(enemies.length===0){
+  enemies.push({x:60,y:80},{x:320,y:100},{x:200,y:400});
+ }
+ draw();
+ if(player.life>0)requestAnimationFrame(update);
+}
+update();
+</script>
+</body>
+</html>
